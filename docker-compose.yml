@@ -12,10 +12,10 @@ services:
         target: /scripts/run.sh
         mode: 555
     environment:
-      - GITLAB_URL=https://gitlab.example.com
-      - EXECUTOR=docker
-      - DOCKER_IMAGE=alpine:latest
-      - CONCURRENT=2
+      - GITLAB_URL=${GITLAB_URL}
+      - EXECUTOR=${EXECUTOR:-docker}
+      - DOCKER_IMAGE=${DOCKER_IMAGE:-alpine:latest}
+      - CONCURRENT=${CONCURRENT:-2}
     secrets:
       - source: gitlab_runner_instance_alpine_token
         target: token
