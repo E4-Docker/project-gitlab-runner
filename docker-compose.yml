@@ -1,8 +1,6 @@
 services:
   gitlab-runner:
     image: 'gitlab/gitlab-runner:alpine'
-    container_name: gitlab-runner-alpine
-    restart: always
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
       - 'gitlab-runner:/etc/gitlab-runner'
@@ -30,6 +28,12 @@ services:
 
 volumes:
   gitlab-runner:
+
+configs:
+  runner_register_sh:
+    file: ./scripts/register.sh
+  runner_run_sh:
+    file: ./scripts/run.sh
 
 secrets:
   gitlab_runner_instance_alpine_token:
