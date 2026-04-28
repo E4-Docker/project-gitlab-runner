@@ -1,0 +1,29 @@
+services:
+  gitlab-runner:
+    image: 'gitlab/gitlab-runner:alpine'
+    container_name: gitlab-runner-alpine
+    restart: always
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - 'gitlab-runner:/etc/gitlab-runner'
+    environment:
+      - GITLAB_URL=https://gitlab.example.com
+      - EXECUTOR=docker
+      - DOCKER_IMAGE=alpine:latest
+      - CONCURRENT=2
+    secrets:
+      - source: gitlab_runner_instance_alpine_token
+        target: token
+    entrypoint: [ "/bin/sh", "-c" ]
+    command: [ "sh /scripts/register.sh && sh /scripts/run.sh" ]
+    deploy:
+      mode: global
+      placement:
+        constraints: [ node.platform.os == linux ]
+
+volumes:
+  gitlab-runner:
+
+secrets:
+  gitlab_runner_instance_alpine_token:
+    external: true
