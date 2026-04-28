@@ -9,10 +9,10 @@ services:
     configs:
       - source: runner_register_sh
         target: /scripts/register.sh
-        mode: '0555'
+        mode: 555
       - source: runner_run_sh
         target: /scripts/run.sh
-        mode: '0555'
+        mode: 555
     environment:
       - GITLAB_URL=https://gitlab.example.com
       - EXECUTOR=docker
