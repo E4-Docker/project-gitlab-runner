@@ -12,6 +12,9 @@ services:
       - HOSTNAME={{.Node.Hostname}}
       - CONCURRENT_FACTOR=${CONCURRENT_FACTOR:-0.25}
       - FF_USE_ADAPTIVE_REQUEST_CONCURRENCY=true
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     secrets:
       - runner_token
     entrypoint: [ "powershell", "-NoProfile", "-NonInteractive", "-Command" ]
