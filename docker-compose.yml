@@ -21,7 +21,8 @@ services:
           --url $GITLAB_URL \
           --token $(cat /run/secrets/runner_token) \
           --executor $EXECUTOR \
-          --docker-image $DOCKER_IMAGE
+          --docker-image $DOCKER_IMAGE \
+          --name "$(hostname)"
 
       # CPU 코어 개수에 따른 concurrent 설정
       CPUS=$(nproc 2>/dev/null || grep -c ^processor /proc/cpuinfo)
