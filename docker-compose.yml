@@ -4,23 +4,40 @@ services:
     volumes:
       - '/var/run/docker.sock:/var/run/docker.sock'
       - 'gitlab-runner:/etc/gitlab-runner'
-    configs:
-      - source: runner_register_sh
-        target: /scripts/register.sh
-        mode: 555
-      - source: runner_run_sh
-        target: /scripts/run.sh
-        mode: 555
     environment:
       - GITLAB_URL=${GITLAB_URL}
       - EXECUTOR=${EXECUTOR:-docker}
       - DOCKER_IMAGE=${DOCKER_IMAGE:-alpine:latest}
-      - CONCURRENT=${CONCURRENT:-2}
+      - CONCURRENT_FACTOR=${CONCURRENT_FACTOR:-1}
+      - TOKEN_NAME=${TOKEN_NAME:-gitlab_runner_instance_alpine_token}
     secrets:
-      - source: gitlab_runner_instance_alpine_token
-        target: token
+      - runner_token
     entrypoint: [ "/bin/sh", "-c" ]
-    command: [ "sh /scripts/register.sh && sh /scripts/run.sh" ]
+    command: |
+      # GitLab Runner 등록
+      echo 'Registering new GitLab Runner...'
+      gitlab-runner register \
+          --non-interactive \
+          --url $GITLAB_URL \
+          --token $(cat /run/secrets/runner_token) \
+          --executor $EXECUTOR \
+          --docker-image $DOCKER_IMAGE
+
+      # CPU 코어 개수에 따른 concurrent 설정
+      CPUS=$(nproc 2>/dev/null || grep -c ^processor /proc/cpuinfo)
+      CONCURRENT=$(($CPUS * ${CONCURRENT_FACTOR:-1}))
+      echo "Detected $CPUS CPUs. Using factor $CONCURRENT_FACTOR. Setting concurrency to $CONCURRENT."
+      sed -i "s/^concurrent = .*/concurrent = $CONCURRENT/" /etc/gitlab-runner/config.toml
+
+      # request_concurrency 설정
+      if grep -q "request_concurrency" /etc/gitlab-runner/config.toml; then
+          sed -i "s|^request_concurrency = .*|request_concurrency = $CONCURRENT|" /etc/gitlab-runner/config.toml
+      else
+          sed -i "2i request_concurrency = $CONCURRENT" /etc/gitlab-runner/config.toml
+      fi
+
+      # GitLab Runner 실행
+      exec gitlab-runner run --user=gitlab-runner --working-directory=/home/gitlab-runner
     deploy:
       mode: global
       placement:
@@ -29,12 +46,7 @@ services:
 volumes:
   gitlab-runner:
 
-configs:
-  runner_register_sh:
-    file: ./scripts/register.sh
-  runner_run_sh:
-    file: ./scripts/run.sh
-
 secrets:
-  gitlab_runner_instance_alpine_token:
+  runner_token:
     external: true
+    name: ${TOKEN_NAME}
