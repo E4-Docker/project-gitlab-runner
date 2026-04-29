@@ -12,32 +12,33 @@ services:
     secrets:
       - runner_token
     entrypoint: [ "/bin/sh", "-c" ]
-    command: |
-      # GitLab Runner 등록
-      echo 'Registering new GitLab Runner...'
-      gitlab-runner register \
-          --non-interactive \
-          --url $GITLAB_URL \
-          --token $(cat /run/secrets/runner_token) \
-          --executor $EXECUTOR \
-          --docker-image $DOCKER_IMAGE \
-          --name "$(hostname)"
+    command:
+      - |
+        # GitLab Runner 등록
+        echo 'Registering new GitLab Runner...'
+        gitlab-runner register \
+            --non-interactive \
+            --url $GITLAB_URL \
+            --token $(cat /run/secrets/runner_token) \
+            --executor $EXECUTOR \
+            --docker-image $DOCKER_IMAGE \
+            --name "$(hostname)"
 
-      # CPU 코어 개수에 따른 concurrent 설정
-      CPUS=$(nproc 2>/dev/null || grep -c ^processor /proc/cpuinfo)
-      CONCURRENT=$(($CPUS * ${CONCURRENT_FACTOR:-1}))
-      echo "Detected $CPUS CPUs. Using factor $CONCURRENT_FACTOR. Setting concurrency to $CONCURRENT."
-      sed -i "s/^concurrent = .*/concurrent = $CONCURRENT/" /etc/gitlab-runner/config.toml
+        # CPU 코어 개수에 따른 concurrent 설정
+        CPUS=$(nproc 2>/dev/null || grep -c ^processor /proc/cpuinfo)
+        CONCURRENT=$(($CPUS * ${CONCURRENT_FACTOR:-1}))
+        echo "Detected $CPUS CPUs. Using factor $CONCURRENT_FACTOR. Setting concurrency to $CONCURRENT."
+        sed -i "s/^concurrent = .*/concurrent = $CONCURRENT/" /etc/gitlab-runner/config.toml
 
-      # request_concurrency 설정
-      if grep -q "request_concurrency" /etc/gitlab-runner/config.toml; then
-          sed -i "s|^request_concurrency = .*|request_concurrency = $CONCURRENT|" /etc/gitlab-runner/config.toml
-      else
-          sed -i "2i request_concurrency = $CONCURRENT" /etc/gitlab-runner/config.toml
-      fi
+        # request_concurrency 설정
+        if grep -q "request_concurrency" /etc/gitlab-runner/config.toml; then
+            sed -i "s|^request_concurrency = .*|request_concurrency = $CONCURRENT|" /etc/gitlab-runner/config.toml
+        else
+            sed -i "2i request_concurrency = $CONCURRENT" /etc/gitlab-runner/config.toml
+        fi
 
-      # GitLab Runner 실행
-      exec gitlab-runner run --user=gitlab-runner --working-directory=/home/gitlab-runner
+        # GitLab Runner 실행
+        exec gitlab-runner run --user=gitlab-runner --working-directory=/home/gitlab-runner
     deploy:
       mode: global
       placement:
