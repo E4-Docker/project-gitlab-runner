@@ -19,8 +19,9 @@ services:
         # 실행 중 오류 발생 시 중지
         set -e
 
-        # 기존 GitLab Runner 등록 해제
+        # 기존 GitLab Runner 등록 해제 및 config.toml 파일 삭제
         gitlab-runner unregister --all-runners
+        rm -f /etc/gitlab-runner/config.toml
 
         # GitLab Runner 등록
         echo 'Registering new GitLab Runner...'
