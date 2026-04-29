@@ -1,74 +1,12 @@
 services:
   gitlab-runner-windows:
-    image: 'mcr.microsoft.com/windows/servercore:ltsc2025'
-    environment:
-      - GITLAB_URL=${GITLAB_URL:-gitlab.example.com}
-      - EXECUTOR=${EXECUTOR:-docker-windows}
-      - DOCKER_IMAGE=${DOCKER_IMAGE:-mcr.microsoft.com/windows/servercore:ltsc2025}
-      - HOSTNAME={{.Node.Hostname}}
-      - CONCURRENT_FACTOR=${CONCURRENT_FACTOR:-0.25}
-      - FF_USE_ADAPTIVE_REQUEST_CONCURRENCY=true
-    secrets:
-      - runner_token
+    image: 'mcr.microsoft.com/windows/servercore:ltsc2022'
     entrypoint: [ "powershell", "-NoProfile", "-NonInteractive", "-Command" ]
     command:
       - |
-        # 실행 중 오류 발생 시 중지
-        $ErrorActionPreference = "Stop"
-
-        # 환경 변수 설정
-        $GitLabRunnerDir = "C:\GitLab-Runner"
-        $GitLabRunnerPath = "$GitLabRunnerDir\gitlab-runner.exe"
-        $ConfigPath = $GitLabRunnerDir\config.toml"
-
-        # GitLab Runner 다운로드
-        if (!(Test-Path "$GitLabRunnerPath")) {
-            Write-Host "Downloading GitLab Runner..."
-            Invoke-WebRequest -Uri "https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-windows-amd64.exe" -OutFile "$GitLabRunnerPath"
-        }
-
-        # 기존 GitLab Runner 등록 해제 및 설정 파일 삭제
-        Write-Host 'Unregistering old GitLab Runner if exists...'
-        $GitLabRunnerPath unregister --all-runners --config $ConfigPath
-        if (Test-Path -Path $ConfigPath) {
-            Remove-Item -Path $ConfigPath -Force
-        }
-
-        # GitLab Runner 등록
-        Write-Host 'Registering new GitLab Runner...'
-        $token = (Get-Content "C:\ProgramData\Docker\secrets\runner_token").Trim()
-        $GitLabRunnerPath register `
-            --non-interactive `
-            --url "$env:GITLAB_URL" `
-            --token "$token" `
-            --executor "$env:EXECUTOR" `
-            --docker-image "$env:DOCKER_IMAGE" `
-            --name "$env:HOSTNAME" `
-            --request-concurrency 4
-
-        # CPU 코어 개수에 따른 concurrent 계산 (소수점 버림 및 최소 1 보장)
-        $cpus = [double]$env:NUMBER_OF_PROCESSORS
-        $factor = [double]$env:CONCURRENT_FACTOR
-        $concurrent = [Math]::Floor($cpus * $factor)
-        if ($concurrent -lt 1) { $concurrent = 1 }
-
-        Write-Host "Detected $cpus CPUs. Using factor $factor. Setting concurrent = $concurrent"
-
-        # concurrent 설정
-        $configData = Get-Content $ConfigPath
-        $configData = $configData -replace "^concurrent = .*", "concurrent = $concurrent"
-        Set-Content -Path $ConfigPath -Value $configData
-
-        # GitLab Runner 실행
-        Write-Host "Starting GitLab Runner..."
-        $GitLabRunnerPath run --working-directory="$GitLabRunnerDir"
+        Write-Host 'Test...'
 
     deploy:
       mode: global
       placement:
         constraints: [ node.platform.os == windows ]
-
-secrets:
-  runner_token:
-    external: true
-    name: ${TOKEN_NAME:-gitlab_runner_instance_windows_token}
