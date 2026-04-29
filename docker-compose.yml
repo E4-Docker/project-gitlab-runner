@@ -9,7 +9,6 @@ services:
       - EXECUTOR=${EXECUTOR:-docker}
       - DOCKER_IMAGE=${DOCKER_IMAGE:-alpine:latest}
       - CONCURRENT_FACTOR=${CONCURRENT_FACTOR:-1}
-      - TOKEN_NAME=${TOKEN_NAME:-gitlab_runner_instance_alpine_token}
     secrets:
       - runner_token
     entrypoint: [ "/bin/sh", "-c" ]
@@ -50,4 +49,4 @@ volumes:
 secrets:
   runner_token:
     external: true
-    name: ${TOKEN_NAME}
+    name: ${TOKEN_NAME:-gitlab_runner_instance_alpine_token}
