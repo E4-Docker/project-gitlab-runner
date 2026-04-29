@@ -23,7 +23,7 @@ services:
         # 환경 변수 설정
         $GitLabRunnerDir = "C:\GitLab-Runner"
         $GitLabRunnerPath = "$GitLabRunnerDir\gitlab-runner.exe"
-        $ConfigPath = $GitLabRunnerDir\config.toml"
+        $ConfigPath = "$GitLabRunnerDir\config.toml"
 
         # GitLab Runner 다운로드
         if (!(Test-Path "$GitLabRunnerPath")) {
