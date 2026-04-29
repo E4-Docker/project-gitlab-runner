@@ -1,10 +1,8 @@
 services:
   gitlab-runner-windows:
     image: 'mcr.microsoft.com/windows/servercore:ltsc2022'
-    entrypoint: [ "powershell", "-NoProfile", "-NonInteractive", "-Command" ]
-    command:
-      - |
-        Write-Host 'Test...'
+    entrypoint: powershell -NoProfile -NonInteractive -Command
+    command: "Write-Host 'Hello World'"
 
     deploy:
       mode: global
