@@ -36,7 +36,7 @@ services:
 
         # CPU 코어 개수에 따른 concurrent 계산
         CPUS=$$(nproc 2>/dev/null || grep -c ^processor /proc/cpuinfo)
-        CONCURRENT=$$(($$CPUS * $${CONCURRENT_FACTOR}))
+        CONCURRENT=$$(awk "BEGIN { res = int($$CPUS * $${CONCURRENT_FACTOR}); print (res < 1 ? 1 : res) }")
         echo "Detected $$CPUS CPUs. Using factor $${CONCURRENT_FACTOR}"
 
         # concurrent 설정
