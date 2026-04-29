@@ -31,7 +31,7 @@ services:
         # GitLab Runner 다운로드
         if (!(Test-Path "$$GitLabRunnerPath")) {
             Write-Host "Downloading GitLab Runner..."
-            Invoke-WebRequest -Uri "https://s3.dualstack.us-east-1.amazonaws.com/gitlab-runner-downloads/latest/binaries/gitlab-runner-windows-amd64.exe" -OutFile "$$GitLabRunnerPath" -UseBasicParsing
+            Invoke-WebRequest -Uri "https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-windows-amd64.exe" -OutFile "$$GitLabRunnerPath" -UseBasicParsing
         }
 
         # 기존 GitLab Runner 등록 해제 및 설정 파일 삭제
