@@ -1,0 +1,61 @@
+services:
+  gitlab-runner:
+    image: 'gitlab/gitlab-runner:alpine'
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - 'gitlab-runner:/etc/gitlab-runner'
+    environment:
+      - GITLAB_URL=${GITLAB_URL:-gitlab.example.com}
+      - EXECUTOR=${EXECUTOR:-docker}
+      - DOCKER_IMAGE=${DOCKER_IMAGE:-alpine:latest}
+      - HOSTNAME={{.Node.Hostname}}
+      - CONCURRENT_FACTOR=${CONCURRENT_FACTOR:-1}
+      - FF_USE_ADAPTIVE_REQUEST_CONCURRENCY=true
+    secrets:
+      - runner_token
+    entrypoint: [ "/bin/sh", "-c" ]
+    command:
+      - |
+        # 실행 중 오류 발생 시 중지
+        set -e
+
+        # 기존 GitLab Runner 등록 해제 및 config.toml 파일 삭제
+        gitlab-runner unregister --all-runners
+        rm -f /etc/gitlab-runner/config.toml
+
+        # GitLab Runner 등록
+        echo 'Registering new GitLab Runner...'
+        gitlab-runner register \
+            --non-interactive \
+            --url "$${GITLAB_URL}" \
+            --token "$$(cat /run/secrets/runner_token)" \
+            --executor "$${EXECUTOR}" \
+            --docker-image "$${DOCKER_IMAGE}" \
+            --name "$${HOSTNAME}" \
+            --request-concurrency 4
+
+        # CPU 코어 개수에 따른 concurrent 계산
+        CPUS=$$(nproc 2>/dev/null || grep -c ^processor /proc/cpuinfo)
+        CONCURRENT=$$(awk "BEGIN { res = int($$CPUS * $${CONCURRENT_FACTOR}); print (res < 1 ? 1 : res) }")
+        echo "Detected $$CPUS CPUs. Using factor $${CONCURRENT_FACTOR}"
+
+        # concurrent 설정
+        echo "Setting concurrent = $$CONCURRENT"
+        sed -i "s/^concurrent = .*/concurrent = $$CONCURRENT/" /etc/gitlab-runner/config.toml
+
+        # GitLab Runner 실행
+        echo "Starting GitLab Runner..."
+        exec gitlab-runner run --user=gitlab-runner --working-directory=/home/gitlab-runner
+
+    deploy:
+      mode: global
+      placement:
+        constraints: [ node.platform.os == linux ]
+
+volumes:
+  gitlab-runner:
+
+secrets:
+  runner_token:
+    external: true
+    name: ${TOKEN_NAME:-gitlab_runner_instance_alpine_token}
