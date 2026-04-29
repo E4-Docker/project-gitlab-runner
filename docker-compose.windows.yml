@@ -1,10 +1,6 @@
 services:
   gitlab-runner-windows:
     image: 'mcr.microsoft.com/windows/servercore:ltsc2022'
-    volumes:
-      - type: npipe
-        source: '\\.\pipe\docker_engine'
-        target: '\\.\pipe\docker_engine'
     environment:
       - GITLAB_URL=${GITLAB_URL:-gitlab.example.com}
       - EXECUTOR=${EXECUTOR:-docker-windows}
