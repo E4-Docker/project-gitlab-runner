@@ -29,7 +29,7 @@ services:
 
         # CPU 코어 개수에 따른 concurrent 설정
         CPUS=$$(nproc 2>/dev/null || grep -c ^processor /proc/cpuinfo)
-        CONCURRENT=$(($$CPUS * $${CONCURRENT_FACTOR}))
+        CONCURRENT=$$(($$CPUS * $${CONCURRENT_FACTOR}))
         echo "Detected $$CPUS CPUs. Using factor $${CONCURRENT_FACTOR}. Setting concurrency to $$CONCURRENT."
         sed -i "s/^concurrent = .*/concurrent = $$CONCURRENT/" /etc/gitlab-runner/config.toml
 
