@@ -1,6 +1,7 @@
 services:
   gitlab-runner-windows:
     image: 'mcr.microsoft.com/windows/servercore:ltsc2022'
+    network_mode: host
     volumes:
       - type: npipe
         source: '\\.\pipe\docker_engine'
