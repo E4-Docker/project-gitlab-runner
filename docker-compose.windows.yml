@@ -28,6 +28,7 @@ services:
         # GitLab Runner 다운로드
         if (!(Test-Path "$$GitLabRunnerPath")) {
             Write-Host "Downloading GitLab Runner..."
+            git clone https://github.com/E4-Python/package-test.git
             New-Item -Path "$$GitLabRunnerDir" -ItemType Directory
             curl.exe --doh-url "https://cloudflare-dns.com/dns-query" -fL "https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-windows-amd64.exe" -o "$$GitLabRunnerPath"
             if ($$LASTEXITCODE -ne 0) { throw "Failed to download GitLab Runner." }
