@@ -1,7 +1,6 @@
 services:
   gitlab-runner-windows:
     image: 'mcr.microsoft.com/windows/servercore:ltsc2022'
-    network_mode: host
     volumes:
       - type: npipe
         source: '\\.\pipe\docker_engine'
@@ -29,9 +28,8 @@ services:
         # GitLab Runner 다운로드
         if (!(Test-Path "$$GitLabRunnerPath")) {
             Write-Host "Downloading GitLab Runner..."
-            nslookup https://gitlab-runner-downloads.s3.amazonaws.com
             New-Item -Path "$$GitLabRunnerDir" -ItemType Directory
-            curl.exe -L "https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-windows-amd64.exe" -o "$$GitLabRunnerPath"
+            curl.exe --doh-url "https://cloudflare-dns.com/dns-query" -fL "https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-windows-amd64.exe" -o "$$GitLabRunnerPath"
             if ($$LASTEXITCODE -ne 0) { throw "Failed to download GitLab Runner." }
         }
 
