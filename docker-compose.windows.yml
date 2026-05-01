@@ -12,9 +12,6 @@ services:
       - HOSTNAME={{.Node.Hostname}}
       - CONCURRENT_FACTOR=${CONCURRENT_FACTOR:-0.25}
       - FF_USE_ADAPTIVE_REQUEST_CONCURRENCY=true
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
     secrets:
       - runner_token
     entrypoint: [ "powershell", "-NoProfile", "-NonInteractive", "-Command" ]
@@ -31,6 +28,7 @@ services:
         # GitLab Runner 다운로드
         if (!(Test-Path "$$GitLabRunnerPath")) {
             Write-Host "Downloading GitLab Runner..."
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
             Invoke-WebRequest -Uri "https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-windows-amd64.exe" -OutFile "$$GitLabRunnerPath" -UseBasicParsing
         }
 
