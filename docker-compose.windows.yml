@@ -29,7 +29,7 @@ services:
         if (!(Test-Path "$$GitLabRunnerPath")) {
             Write-Host "Downloading GitLab Runner..."
             New-Item -Path "$$GitLabRunnerDir" -ItemType Directory -Force | Out-Null
-            curl.exe -fL --resolve "gitlab-runner-downloads.s3.amazonaws.com:443:52.217.129.17" "https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-windows-amd64.exe" -o "$$GitLabRunnerPath"
+            curl.exe -L "https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-windows-amd64.exe" -o "$$GitLabRunnerPath"
             if ($$LASTEXITCODE -ne 0) { throw "Failed to download GitLab Runner." }
         }
 
