@@ -14,6 +14,8 @@ services:
       - FF_USE_ADAPTIVE_REQUEST_CONCURRENCY=true
     secrets:
       - runner_token
+    networks:
+      - nat
     entrypoint: [ "powershell", "-NoProfile", "-NonInteractive", "-Command" ]
     command:
       - |
@@ -78,3 +80,7 @@ secrets:
   runner_token:
     external: true
     name: ${TOKEN_NAME:-gitlab_runner_instance_windows_token}
+
+networks:
+  nat:
+    external: true
