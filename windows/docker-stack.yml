@@ -13,6 +13,7 @@ services:
       - CONCURRENT_FACTOR=${CONCURRENT_FACTOR:-0.25}
       - FF_USE_ADAPTIVE_REQUEST_CONCURRENCY=true
     networks:
+      - default
       - nat
     secrets:
       - runner_token
@@ -77,8 +78,10 @@ services:
         constraints: [ node.platform.os == windows ]
 
 networks:
+  default:
+    driver: overlay
   nat:
-    driver: nat
+    external: true
 
 secrets:
   runner_token:
