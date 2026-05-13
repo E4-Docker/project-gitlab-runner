@@ -12,6 +12,8 @@ services:
       - HOSTNAME={{.Node.Hostname}}
       - CONCURRENT_FACTOR=${CONCURRENT_FACTOR:-0.25}
       - FF_USE_ADAPTIVE_REQUEST_CONCURRENCY=true
+    networks:
+      - nat
     secrets:
       - runner_token
     entrypoint: [ "powershell", "-NoProfile", "-NonInteractive", "-Command" ]
@@ -73,6 +75,10 @@ services:
       mode: global
       placement:
         constraints: [ node.platform.os == windows ]
+
+networks:
+  nat:
+    driver: nat
 
 secrets:
   runner_token:
