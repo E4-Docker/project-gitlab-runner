@@ -7,15 +7,15 @@ services:
     restart: always
     volumes:
       - type: npipe
-        source: '\\.\pipe\docker_engine'
-        target: '\\.\pipe\docker_engine'
+        source: \\.\pipe\docker_engine
+        target: \\.\pipe\docker_engine
       - type: bind
-        source: 'C:\ProgramData\docker\secrets\gitlab-runner'
-        target: 'C:\ProgramData\docker\secrets\gitlab-runner'
+        source: C:\ProgramData\docker\secrets\gitlab-runner
+        target: C:\ProgramData\docker\secrets\gitlab-runner
         read_only: true
       - type: volume
-        source: config
-        target: 'C:\GitLab-Runner'
+        source: data
+        target: C:\Users\ContainerUser
     environment:
       - GITLAB_URL=${GITLAB_URL:-gitlab.example.com} # 필수 설정
       - TOKEN_NAME=${TOKEN_NAME:-runner_token}
@@ -29,32 +29,36 @@ services:
         $$ErrorActionPreference = "Stop"
 
         # 환경 변수 설정
-        $$GitLabRunnerDir = "C:\GitLab-Runner"
+        $$GitLabRunnerDir = "C:\Users\ContainerUser\GitLabRunner"
         $$GitLabRunnerPath = "$$GitLabRunnerDir\gitlab-runner.exe"
         $$ConfigPath = "$$GitLabRunnerDir\config.toml"
 
-        # 볼륨 권한 설정
-        $$aclCheck = icacls "$$GitLabRunnerDir" | Out-String
-        if ($$aclCheck -notmatch "Everyone") {
-            Write-Host "Granting Everyone permissions for $$GitLabRunnerDir..."
-            icacls "$$GitLabRunnerDir" /grant "Everyone:(F)"
-        } else {
-            Write-Host "Permissions already granted for Everyone on $$GitLabRunnerDir."
+        # 폴더 생성
+        if (!(Test-Path "$$GitLabRunnerDir")) {
+          Write-Host "Creating directory $$GitLabRunnerDir..."
+          New-Item -Path "$$GitLabRunnerDir" -ItemType Directory -Force | Out-Null
         }
+
+        # 폴더 권한 설정
+        Write-Host "Setting permissions on $$GitLabRunnerDir..."
+        icacls "$$GitLabRunnerDir" /setowner "*S-1-5-32-544" /T /C /Q
+        icacls "$$GitLabRunnerDir" /reset /T /C /Q
+        icacls "$$GitLabRunnerDir" /grant "Everyone:(OI)(CI)F" /T /C /Q
 
         # GitLab Runner 다운로드
         if (!(Test-Path "$$GitLabRunnerPath")) {
-            Write-Host "Downloading GitLab Runner..."
-            New-Item -Path "$$GitLabRunnerDir" -ItemType Directory -Force | Out-Null
-            curl.exe -L "https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-windows-amd64.exe" -o "$$GitLabRunnerPath"
-            if ($$LASTEXITCODE -ne 0) { throw "Failed to download GitLab Runner." }
+          Write-Host "Downloading GitLab Runner..."
+          curl.exe -L "https://gitlab-runner-downloads.s3.amazonaws.com/latest/binaries/gitlab-runner-windows-amd64.exe" -o "$$GitLabRunnerPath"
+          if ($$LASTEXITCODE -ne 0) { throw "Failed to download GitLab Runner." }
+        } else {
+          Write-Host "GitLab Runner already exists."
         }
 
         # 기존 GitLab Runner 등록 해제 및 설정 파일 삭제
         if (Test-Path -Path "$$ConfigPath") {
-            Write-Host "Unregistering old GitLab Runner..."
-            & "$$GitLabRunnerPath" unregister --all-runners --config "$$ConfigPath"
-            Remove-Item -Path "$$ConfigPath" -Force
+          Write-Host "Unregistering old GitLab Runner..."
+          & "$$GitLabRunnerPath" unregister --all-runners --config "$$ConfigPath"
+          Remove-Item -Path "$$ConfigPath" -Force
         }
 
         # GitLab Runner 등록
@@ -107,4 +111,4 @@ services:
         & "$$GitLabRunnerPath" run --config "$$ConfigPath" --working-directory="$$GitLabRunnerDir"
 
 volumes:
-  config:
+  data:
