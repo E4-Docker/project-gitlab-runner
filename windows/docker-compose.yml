@@ -62,6 +62,8 @@ services:
             --docker-image "mcr.microsoft.com/windows/servercore:ltsc2022" `
             --name "$$env:COMPUTERNAME-powershell" `
             --shell "powershell" `
+            --docker-isolation "process" `
+            --docker-user "ContainerAdministrator" `
             --request-concurrency 4
 
         Write-Host 'Registering GitLab Runner (pwsh)...'
@@ -74,6 +76,8 @@ services:
             --docker-image "mcr.microsoft.com/powershell:nanoserver-ltsc2022" `
             --name "$$env:COMPUTERNAME-pwsh" `
             --shell "pwsh" `
+            --docker-isolation "process" `
+            --docker-user "ContainerAdministrator" `
             --request-concurrency 4
 
         # CPU 코어 개수에 따른 concurrent 계산 (소수점 버림 및 최소 1 보장)
