@@ -69,9 +69,10 @@ services:
 
         Write-Host "Detected $$cpus CPUs. Using factor $$factor. Setting concurrent = $$concurrent"
 
-        # concurrent 설정
+        # config.toml 파일 수정
         $$configData = Get-Content "$$ConfigPath"
         $$configData = $$configData -replace "^concurrent = .*", "concurrent = $$concurrent"
+        $$configData = $$configData -replace '^\s*shell = .*', 'shell = "powershell"'
         Set-Content -Path "$$ConfigPath" -Value $$configData
 
         # GitLab Runner 실행
