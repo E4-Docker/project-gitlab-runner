@@ -1,22 +1,27 @@
 services:
   gitlab-runner-windows:
     image: 'mcr.microsoft.com/windows/servercore:ltsc2022'
+    isolation: process
+    container_name: gitlab-runner-windows
+    restart: always
     volumes:
       - type: npipe
         source: '\\.\pipe\docker_engine'
         target: '\\.\pipe\docker_engine'
+      - type: bind
+        source: 'C:\ProgramData\docker\secrets\gitlab-runner'
+        target: 'C:\ProgramData\docker\secrets\gitlab-runner'
+        read_only: true
+      - type: volume
+        source: config
+        target: 'C:\GitLab-Runner'
     environment:
-      - GITLAB_URL=${GITLAB_URL:-gitlab.example.com}
+      - GITLAB_URL=${GITLAB_URL:-gitlab.example.com} # 필수 설정
+      - TOKEN_NAME=${TOKEN_NAME:-runner_token.txt}
       - EXECUTOR=${EXECUTOR:-docker-windows}
       - DOCKER_IMAGE=${DOCKER_IMAGE:-mcr.microsoft.com/windows/servercore:ltsc2022}
-      - HOSTNAME={{.Node.Hostname}}
       - CONCURRENT_FACTOR=${CONCURRENT_FACTOR:-0.25}
       - FF_USE_ADAPTIVE_REQUEST_CONCURRENCY=true
-    networks:
-      - default
-      - nat
-    secrets:
-      - runner_token
     entrypoint: [ "powershell", "-NoProfile", "-NonInteractive", "-Command" ]
     command:
       - |
@@ -38,21 +43,22 @@ services:
 
         # 기존 GitLab Runner 등록 해제 및 설정 파일 삭제
         Write-Host 'Unregistering old GitLab Runner if exists...'
-        & "$$GitLabRunnerPath" unregister --all-runners --config "$$ConfigPath"
         if (Test-Path -Path "$$ConfigPath") {
+            & "$$GitLabRunnerPath" unregister --all-runners --config "$$ConfigPath"
             Remove-Item -Path "$$ConfigPath" -Force
         }
 
         # GitLab Runner 등록
         Write-Host 'Registering new GitLab Runner...'
-        $$token = (Get-Content "C:\ProgramData\Docker\secrets\runner_token").Trim()
+        $$token = (Get-Content "C:\ProgramData\Docker\secrets\gitlab-runner\$$env:TOKEN_NAME").Trim()
         & "$$GitLabRunnerPath" register `
             --non-interactive `
+            --config "$$ConfigPath" `
             --url "$$env:GITLAB_URL" `
             --token "$$token" `
             --executor "$$env:EXECUTOR" `
             --docker-image "$$env:DOCKER_IMAGE" `
-            --name "$$env:HOSTNAME" `
+            --name "$$env:COMPUTERNAME" `
             --request-concurrency 4
 
         # CPU 코어 개수에 따른 concurrent 계산 (소수점 버림 및 최소 1 보장)
@@ -70,20 +76,7 @@ services:
 
         # GitLab Runner 실행
         Write-Host "Starting GitLab Runner..."
-        & "$$GitLabRunnerPath" run --working-directory="$$GitLabRunnerDir"
+        & "$$GitLabRunnerPath" run --config "$$ConfigPath" --working-directory="$$GitLabRunnerDir"
 
-    deploy:
-      mode: global
-      placement:
-        constraints: [ node.platform.os == windows ]
-
-networks:
-  default:
-    driver: overlay
-  nat:
-    external: true
-
-secrets:
-  runner_token:
-    external: true
-    name: ${TOKEN_NAME:-gitlab_runner_instance_windows_token}
+volumes:
+  config:
