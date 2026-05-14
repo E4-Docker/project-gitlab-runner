@@ -43,8 +43,8 @@ services:
         }
 
         # 기존 GitLab Runner 등록 해제 및 설정 파일 삭제
-        Write-Host 'Unregistering old GitLab Runner if exists...'
         if (Test-Path -Path "$$ConfigPath") {
+            Write-Host 'Unregistering old GitLab Runner if exists...'
             & "$$GitLabRunnerPath" unregister --all-runners --config "$$ConfigPath"
             Remove-Item -Path "$$ConfigPath" -Force
         }
