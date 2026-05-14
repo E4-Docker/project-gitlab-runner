@@ -18,9 +18,8 @@ services:
         target: 'C:\GitLab-Runner'
     environment:
       - GITLAB_URL=${GITLAB_URL:-gitlab.example.com} # 필수 설정
-      - TOKEN_NAME=${TOKEN_NAME:-runner_token.txt}
+      - TOKEN_NAME=${TOKEN_NAME:-runner_token}
       - EXECUTOR=${EXECUTOR:-docker-windows}
-      - DOCKER_IMAGE=${DOCKER_IMAGE:-mcr.microsoft.com/powershell:nanoserver-ltsc2022}
       - CONCURRENT_FACTOR=${CONCURRENT_FACTOR:-0.25}
       - FF_USE_ADAPTIVE_REQUEST_CONCURRENCY=true
     entrypoint: [ "pwsh", "-NoProfile", "-NonInteractive", "-Command" ]
@@ -50,16 +49,31 @@ services:
         }
 
         # GitLab Runner 등록
-        Write-Host 'Registering new GitLab Runner...'
-        $$token = (Get-Content "C:\ProgramData\Docker\secrets\gitlab-runner\$$env:TOKEN_NAME").Trim()
+        $$token_powershell = (Get-Content "C:\ProgramData\Docker\secrets\gitlab-runner\$${env:TOKEN_NAME}_powershell.txt").Trim()
+        $$token_pwsh = (Get-Content "C:\ProgramData\Docker\secrets\gitlab-runner\$${env:TOKEN_NAME}_pwsh.txt").Trim()
+
+        Write-Host 'Registering GitLab Runner (PowerShell)...'
         & "$$GitLabRunnerPath" register `
             --non-interactive `
             --config "$$ConfigPath" `
             --url "$$env:GITLAB_URL" `
-            --token "$$token" `
+            --token "$$token_powershell" `
             --executor "$$env:EXECUTOR" `
-            --docker-image "$$env:DOCKER_IMAGE" `
-            --name "$$env:COMPUTERNAME" `
+            --docker-image "mcr.microsoft.com/windows/servercore:ltsc2022" `
+            --name "$$env:COMPUTERNAME-powershell" `
+            --shell "powershell" `
+            --request-concurrency 4
+
+        Write-Host 'Registering GitLab Runner (pwsh)...'
+        & "$$GitLabRunnerPath" register `
+            --non-interactive `
+            --config "$$ConfigPath" `
+            --url "$$env:GITLAB_URL" `
+            --token "$$token_pwsh" `
+            --executor "$$env:EXECUTOR" `
+            --docker-image "mcr.microsoft.com/powershell:nanoserver-ltsc2022" `
+            --name "$$env:COMPUTERNAME-pwsh" `
+            --shell "pwsh" `
             --request-concurrency 4
 
         # CPU 코어 개수에 따른 concurrent 계산 (소수점 버림 및 최소 1 보장)
@@ -73,7 +87,6 @@ services:
         # config.toml 파일 수정
         $$configData = Get-Content "$$ConfigPath"
         $$configData = $$configData -replace "^concurrent = .*", "concurrent = $$concurrent"
-        $$configData = $$configData -replace '^\s*shell = .*', 'shell = "powershell"'
         Set-Content -Path "$$ConfigPath" -Value $$configData
 
         # GitLab Runner 실행
