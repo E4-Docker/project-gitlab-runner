@@ -33,6 +33,15 @@ services:
         $$GitLabRunnerPath = "$$GitLabRunnerDir\gitlab-runner.exe"
         $$ConfigPath = "$$GitLabRunnerDir\config.toml"
 
+        # 볼륨 권한 설정
+        $$aclCheck = icacls "$$GitLabRunnerDir" | Out-String
+        if ($$aclCheck -notmatch "Everyone") {
+            Write-Host "Granting Everyone permissions for $$GitLabRunnerDir..."
+            icacls "$$GitLabRunnerDir" /grant "Everyone:(F)"
+        } else {
+            Write-Host "Permissions already granted for Everyone on $$GitLabRunnerDir."
+        }
+
         # GitLab Runner 다운로드
         if (!(Test-Path "$$GitLabRunnerPath")) {
             Write-Host "Downloading GitLab Runner..."
@@ -43,7 +52,7 @@ services:
 
         # 기존 GitLab Runner 등록 해제 및 설정 파일 삭제
         if (Test-Path -Path "$$ConfigPath") {
-            Write-Host 'Unregistering old GitLab Runner if exists...'
+            Write-Host "Unregistering old GitLab Runner..."
             & "$$GitLabRunnerPath" unregister --all-runners --config "$$ConfigPath"
             Remove-Item -Path "$$ConfigPath" -Force
         }
@@ -52,7 +61,7 @@ services:
         $$token_powershell = (Get-Content "C:\ProgramData\Docker\secrets\gitlab-runner\$${env:TOKEN_NAME}_powershell.txt").Trim()
         $$token_pwsh = (Get-Content "C:\ProgramData\Docker\secrets\gitlab-runner\$${env:TOKEN_NAME}_pwsh.txt").Trim()
 
-        Write-Host 'Registering GitLab Runner (PowerShell)...'
+        Write-Host "Registering GitLab Runner (PowerShell)..."
         & "$$GitLabRunnerPath" register `
             --non-interactive `
             --config "$$ConfigPath" `
@@ -66,7 +75,7 @@ services:
             --docker-user "ContainerAdministrator" `
             --request-concurrency 4
 
-        Write-Host 'Registering GitLab Runner (pwsh)...'
+        Write-Host "Registering GitLab Runner (pwsh)..."
         & "$$GitLabRunnerPath" register `
             --non-interactive `
             --config "$$ConfigPath" `
