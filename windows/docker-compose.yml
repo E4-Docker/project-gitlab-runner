@@ -32,6 +32,13 @@ services:
         $$GitLabRunnerDir = "C:\Users\ContainerUser\GitLabRunner"
         $$GitLabRunnerPath = "$$GitLabRunnerDir\gitlab-runner.exe"
         $$ConfigPath = "$$GitLabRunnerDir\config.toml"
+        $$SystemIdPath = "$$GitLabRunnerDir\.runner_system_id"
+
+        # .runner_system_id 파일이 존재하지 않는 경우에만 MachineGUID 재설정
+        if (!(Test-Path -Path "$$SystemIdPath")) {
+          Write-Host ".runner_system_id not found. Resetting MachineGUID..."
+          Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name 'MachineGuid' -Value ([guid]::NewGuid().ToString())
+        }
 
         # 폴더 생성
         if (!(Test-Path "$$GitLabRunnerDir")) {
