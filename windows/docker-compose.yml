@@ -61,10 +61,9 @@ services:
           Write-Host "GitLab Runner already exists."
         }
 
-        # 기존 GitLab Runner 등록 해제 및 설정 파일 삭제
+        # 기존 설정 파일 삭제
         if (Test-Path -Path "$$ConfigPath") {
-          Write-Host "Unregistering old GitLab Runner..."
-          & "$$GitLabRunnerPath" unregister --all-runners --config "$$ConfigPath"
+          Write-Host "Removing old GitLab Runner configuration..."
           Remove-Item -Path "$$ConfigPath" -Force
         }
 
