@@ -1,4 +1,4 @@
-# GitLab Self-managed Runner Deployment Repository
+# 🐳 GitLab Self-managed Runner Deployment Repository
 
 이 저장소는 **Docker Compose** 또는 **Docker Swarm**을 사용하여 **GitLab Self-managed Runner**를 배포하기 위한 설정 파일들을 제공합니다.
 
