@@ -83,6 +83,7 @@ services:
             --shell "powershell" `
             --docker-isolation "process" `
             --docker-user "ContainerAdministrator" `
+            --docker-volumes "builds:C:\builds" `
             --request-concurrency 4
 
         Write-Host "Registering GitLab Runner (pwsh)..."
@@ -97,6 +98,7 @@ services:
             --shell "pwsh" `
             --docker-isolation "process" `
             --docker-user "ContainerAdministrator" `
+            --docker-volumes "builds:C:\builds" `
             --request-concurrency 4
 
         # CPU 코어 개수에 따른 concurrent 계산 (소수점 버림 및 최소 1 보장)
