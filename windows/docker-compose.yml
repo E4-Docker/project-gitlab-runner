@@ -32,6 +32,13 @@ services:
         $$GitLabRunnerDir = "C:\Users\ContainerUser\GitLabRunner"
         $$GitLabRunnerPath = "$$GitLabRunnerDir\gitlab-runner.exe"
         $$ConfigPath = "$$GitLabRunnerDir\config.toml"
+        $$SystemIdPath = "$$GitLabRunnerDir\.runner_system_id"
+
+        # .runner_system_id 파일이 존재하지 않는 경우에만 MachineGUID 재설정
+        if (!(Test-Path -Path "$$SystemIdPath")) {
+          Write-Host ".runner_system_id not found. Resetting MachineGUID..."
+          Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name 'MachineGuid' -Value ([guid]::NewGuid().ToString())
+        }
 
         # 폴더 생성
         if (!(Test-Path "$$GitLabRunnerDir")) {
@@ -54,10 +61,9 @@ services:
           Write-Host "GitLab Runner already exists."
         }
 
-        # 기존 GitLab Runner 등록 해제 및 설정 파일 삭제
+        # 기존 설정 파일 삭제
         if (Test-Path -Path "$$ConfigPath") {
-          Write-Host "Unregistering old GitLab Runner..."
-          & "$$GitLabRunnerPath" unregister --all-runners --config "$$ConfigPath"
+          Write-Host "Removing old GitLab Runner configuration..."
           Remove-Item -Path "$$ConfigPath" -Force
         }
 
@@ -77,6 +83,7 @@ services:
             --shell "powershell" `
             --docker-isolation "process" `
             --docker-user "ContainerAdministrator" `
+            --docker-volumes "builds:C:\builds" `
             --request-concurrency 4
 
         Write-Host "Registering GitLab Runner (pwsh)..."
@@ -91,6 +98,7 @@ services:
             --shell "pwsh" `
             --docker-isolation "process" `
             --docker-user "ContainerAdministrator" `
+            --docker-volumes "builds:C:\builds" `
             --request-concurrency 4
 
         # CPU 코어 개수에 따른 concurrent 계산 (소수점 버림 및 최소 1 보장)
